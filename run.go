@@ -2,9 +2,13 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/json"
+	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -53,13 +57,32 @@ func runJob(j job) {
 	}()
 	runLog.lg.Printf("[Start] pid.%d %s %s %s\n", pid, j.Cmd, j.Args, j.Out)
 	if j.Out != "" {
-		of, ofErr := os.OpenFile(j.Out, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-		if ofErr != nil {
-			runLog.lg.Printf("[Err] pid.%d %s %s %s %s", pid, j.Cmd, j.Args, j.Out, ofErr)
-		} else {
-			defer of.Close()
+
+		if strings.HasPrefix(j.Out, "http") {
+
+			buffer := bytes.NewBuffer([]byte{})
+
 			outrd := bufio.NewReader(outpipe)
-			outrd.WriteTo(of)
+			outrd.WriteTo(buffer)
+
+			data := map[string]string{
+				"data": buffer.String(),
+			}
+
+			if body, ok := json.Marshal(data); ok == nil {
+				bodysend := bytes.NewBuffer(body)
+				http.Post(j.Out, "application/json;charset=utf-8", bodysend)
+			}
+
+		} else {
+			of, ofErr := os.OpenFile(j.Out, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+			if ofErr != nil {
+				runLog.lg.Printf("[Err] pid.%d %s %s %s %s", pid, j.Cmd, j.Args, j.Out, ofErr)
+			} else {
+				defer of.Close()
+				outrd := bufio.NewReader(outpipe)
+				outrd.WriteTo(of)
+			}
 		}
 	}
 	waitErr := cmd.Wait()
