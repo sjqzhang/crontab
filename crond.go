@@ -8,7 +8,7 @@ import (
 	"runtime"
 )
 
-var port *string = flag.String("port", "127.0.0.1:8080", "web port")
+var port *string = flag.String("port", "127.0.0.1:4444", "web port")
 var logs *string = flag.String("logs", "/var/log/croncli/", "log path")
 var conf *string = flag.String("conf", "crontab.conf", "crontab config")
 var stopCh chan bool = make(chan bool)
