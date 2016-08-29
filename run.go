@@ -3,13 +3,14 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
-	"net/http"
+
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/astaxie/beego/httplib"
 )
 
 /*
@@ -60,19 +61,15 @@ func runJob(j job) {
 
 		if strings.HasPrefix(j.Out, "http") {
 
-			buffer := bytes.NewBuffer([]byte{})
-
-			outrd := bufio.NewReader(outpipe)
-			outrd.WriteTo(buffer)
-
-			data := map[string]string{
-				"data": buffer.String(),
-			}
-
-			if body, ok := json.Marshal(data); ok == nil {
-				bodysend := bytes.NewBuffer(body)
-				http.Post(j.Out, "application/json;charset=utf-8", bodysend)
-			}
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(outpipe)
+			s := buf.String()
+			util := Common{}
+			req := httplib.Post(j.Out)
+			req.Param("result", s)
+			req.Param("uuid", util.GetProductUUID())
+			req.Param("cmd", j.Cmd+" "+strings.Join(j.Args, " "))
+			req.String()
 
 		} else {
 			of, ofErr := os.OpenFile(j.Out, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)

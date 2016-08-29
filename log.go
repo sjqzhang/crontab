@@ -80,6 +80,7 @@ func (l *wyLogger) rename() {
 		fn := l.dir + tf + "_" + l.filename
 		l.logfile, _ = os.OpenFile(fn, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 		l.lg = log.New(l.logfile, "", log.LstdFlags)
+
 	}
 }
 
