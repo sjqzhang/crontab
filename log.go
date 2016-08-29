@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -80,6 +82,19 @@ func (l *wyLogger) rename() {
 		fn := l.dir + tf + "_" + l.filename
 		l.logfile, _ = os.OpenFile(fn, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 		l.lg = log.New(l.logfile, "", log.LstdFlags)
+
+		now := time.Now()
+
+		walk := func(path string, info os.FileInfo, err error) error {
+
+			if strings.HasSuffix(path, "run.log") && now.Unix()-info.ModTime().Unix() > 60*60*24*7 {
+
+				os.Remove(path)
+			}
+
+			return nil
+		}
+		filepath.Walk(l.dir, walk)
 
 	}
 }
